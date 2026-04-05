@@ -66,21 +66,18 @@
                         <thead>
                             <tr class="border-b border-(--color-base-300) text-(--color-primary)">
                                 <th class="px-2 py-2">#</th>
-                                <th class="px-2 py-2">Run ID</th>
-                                <th class="px-2 py-2">Version</th>
                                 <th class="px-2 py-2">Players</th>
                                 <th v-if="view === 'user-runs'" class="px-2 py-2">Matched player</th>
                                 <th class="px-2 py-2">Waves</th>
                                 <th class="px-2 py-2">Duration</th>
                                 <th class="px-2 py-2">Points</th>
                                 <th class="px-2 py-2">Submitted</th>
+                                <th class="px-2 py-2">Version</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="row in rows" :key="row.runId" class="border-b border-(--color-base-300)/60 align-top hover:bg-(--color-base-300)/45">
                                 <td class="px-2 py-2">{{ row.rank }}</td>
-                                <td class="px-2 py-2">{{ row.runId }}</td>
-                                <td class="px-2 py-2">{{ row.version }}</td>
                                 <td class="px-2 py-2">
                                     <div class="flex flex-col gap-1">
                                         <span v-for="player in row.players" :key="`${row.runId}-${player.nickname}-${player.points}`">
@@ -96,6 +93,7 @@
                                 <td class="px-2 py-2">{{ formatDuration(row.duration) }}</td>
                                 <td class="px-2 py-2">{{ row.totalPoints }}</td>
                                 <td class="px-2 py-2">{{ formatDate(row.createdAt) }}</td>
+                                <td class="px-2 py-2">{{ row.version }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -218,7 +216,17 @@ function formatDuration(durationInSeconds: number): string {
 }
 
 function formatDate(value: string): string {
-    return new Date(value).toLocaleString()
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return '-'
+    }
+
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = String(date.getFullYear()).slice(-2)
+
+    return `${day}.${month}.${year}`
 }
 
 function formatPlayer(player: PlayerRow): string {
