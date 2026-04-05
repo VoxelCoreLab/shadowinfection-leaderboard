@@ -32,24 +32,43 @@ export class RunsService {
       );
     }
 
-    const [gameMode, season] = await Promise.all([
-      this.prisma.gameMode.findUnique({
-        where: { name: this.zombieGameModeName },
-      }),
-      this.prisma.season.findFirst({
-        where: { version: dto.version },
-        orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }, { id: 'desc' }],
-      }),
-    ]);
+    const gameMode = await this.prisma.gameMode.upsert({
+      where: { name: this.zombieGameModeName },
+      update: {},
+      create: { name: this.zombieGameModeName },
+    });
 
-    if (!gameMode) {
-      throw new NotFoundException('Zombie game mode not found');
-    }
+    let season = await this.prisma.season.findFirst({
+      where: { version: dto.version },
+      orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }, { id: 'desc' }],
+    });
 
     if (!season) {
-      throw new NotFoundException(
-        `No season found for version ${dto.version}`,
+      const now = new Date();
+      const seasonStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0),
       );
+      const seasonEnd = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999),
+      );
+
+      season = await this.prisma.season.upsert({
+        where: {
+          version_startDate_endDate: {
+            version: dto.version,
+            startDate: seasonStart,
+            endDate: seasonEnd,
+          },
+        },
+        update: { isActive: true },
+        create: {
+          version: dto.version,
+          startDate: seasonStart,
+          endDate: seasonEnd,
+          description: `Auto-created season for version ${dto.version}`,
+          isActive: true,
+        },
+      });
     }
 
     const created = await this.prisma.run.create({
