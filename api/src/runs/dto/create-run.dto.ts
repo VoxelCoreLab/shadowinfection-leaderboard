@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsInt,
@@ -22,7 +21,7 @@ export class CreateRunDto {
   @IsNotEmpty()
   version: string;
 
-  @ApiProperty({ example: 4, minimum: 1, maximum: 4 })
+  @ApiProperty({ example: 4, minimum: 1 })
   @IsInt()
   @Min(1)
   playerCount: number;
@@ -45,7 +44,6 @@ export class CreateRunDto {
   @ApiProperty({ type: [CreateRunPlayerDto] })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(4)
   @ValidateNested({ each: true })
   @Type(() => CreateRunPlayerDto)
   players: CreateRunPlayerDto[];

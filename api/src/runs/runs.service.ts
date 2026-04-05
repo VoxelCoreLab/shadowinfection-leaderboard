@@ -19,10 +19,6 @@ export class RunsService {
       );
     }
 
-    if (dto.playerCount > 4) {
-      throw new BadRequestException('playerCount must be between 1 and 4');
-    }
-
     const normalizedNicknames = dto.players.map((player) =>
       player.nickname.trim().toLowerCase(),
     );
