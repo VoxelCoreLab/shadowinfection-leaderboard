@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model - represents a player
+model User {
+  id        Int      @id @default(autoincrement())
+  nickname  String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  runPlayers        RunPlayer[]
+  playerSeasonStats PlayerSeasonStats[]
+
+  @@map("users")
+}
+
+// GameMode model - represents different game modes (e.g., Zombie)
+model GameMode {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // Relations
+  runs              Run[]
+  playerSeasonStats PlayerSeasonStats[]
+
+  @@map("game_modes")
+}
+
+// Season model - represents seasonal leaderboards tied to game version and date range
+model Season {
+  id          Int      @id @default(autoincrement())
+  version     String // e.g., "1.4.2"
+  startDate   DateTime
+  endDate     DateTime
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  runs              Run[]
+  playerSeasonStats PlayerSeasonStats[]
+
+  // Unique constraint: versions must have unique date ranges
+  @@unique([version, startDate, endDate])
+  @@map("seasons")
+}
+
+// Run model - represents a single game run/attempt
+model Run {
+  id            Int      @id @default(autoincrement())
+  gameModeId    Int
+  seasonId      Int
+  playerCount   Int // 1, 2, 3, or 4 players
+  wavesSurvived Int // Primary leaderboard rank metric
+  duration      Int // Time in seconds, secondary rank metric
+  totalPoints   Int // Aggregate points from all players, tertiary rank metric
+  createdAt     DateTime @default(now())
+
+  // Relations
+  gameMode   GameMode    @relation(fields: [gameModeId], references: [id], onDelete: Cascade)
+  season     Season      @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  runPlayers RunPlayer[]
+
+  // Index for common leaderboard queries
+  @@index([gameModeId, seasonId, playerCount])
+  @@index([seasonId, gameModeId, wavesSurvived(sort: Desc), duration(sort: Asc), createdAt(sort: Asc)])
+  @@map("runs")
+}
+
+// RunPlayer model - per-player stats in a run
+model RunPlayer {
+  id            Int  @id @default(autoincrement())
+  runId         Int
+  userId        Int? // Nullable: preserved on user deletion
+  points        Int
+  zombieKills   Int
+  goldCollected Int
+  deaths        Int
+
+  // Relations
+  run  Run   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // One user per run (no duplicate players in single run)
+  @@unique([runId, userId])
+  @@map("run_players")
+}
+
+// PlayerSeasonStats model - aggregated seasonal stats for fast leaderboard queries
+model PlayerSeasonStats {
+  id                  Int      @id @default(autoincrement())
+  seasonId            Int
+  userId              Int? // Nullable: preserved on user deletion
+  gameModeId          Int
+  playerCountCategory Int? // Optional: 1, 2, 3, or 4 for per-player-count stats (null for all)
+  totalPoints         Int
+  totalZombieKills    Int
+  totalGoldCollected  Int
+  totalDeaths         Int
+  runsPlayed          Int
+  bestWaves           Int // Personal best waves in this season
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  season   Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  gameMode GameMode @relation(fields: [gameModeId], references: [id], onDelete: Cascade)
+
+  // Unique aggregate per season/user/mode/playerCount combo
+  @@unique([seasonId, userId, gameModeId, playerCountCategory])
+  @@index([seasonId, gameModeId, totalPoints(sort: Desc)])
+  @@map("player_season_stats")
+}
