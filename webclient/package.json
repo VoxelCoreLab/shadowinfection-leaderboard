@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:prod": "vite --mode prod",
     "build": "vue-tsc -b && vite build",
+    "build:prod": "vite build --mode prod",
     "preview": "vite preview",
     "api:generate": "swagger-typescript-api generate -p http://localhost:3000/api-json -o src/generated  -n api-client.ts --axios"
   },
