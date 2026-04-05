@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { PaginationQueryDto } from './pagination-query.dto';
 
 export class TopRunsQueryDto extends PaginationQueryDto {
@@ -11,4 +12,12 @@ export class TopRunsQueryDto extends PaginationQueryDto {
   @IsString()
   @IsNotEmpty()
   version: string;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 5, example: 5 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  playerCount?: number;
 }

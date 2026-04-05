@@ -16,6 +16,7 @@ export class LeaderboardsService {
     const where = {
       gameMode: { name: this.zombieGameModeName },
       season: { version: query.version },
+      ...(query.playerCount ? { playerCount: query.playerCount } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -74,6 +75,7 @@ export class LeaderboardsService {
     const where = {
       gameMode: { name: this.zombieGameModeName },
       season: { version: query.version },
+      ...(query.playerCount ? { playerCount: query.playerCount } : {}),
       runPlayers: {
         some: {
           userId: user.id,

@@ -3,12 +3,12 @@
         <section class="mx-auto max-w-6xl space-y-6">
             <header class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <p class="text-sm uppercase tracking-[0.2em] text-(--color-primary)">Zombie Leaderboards</p>
-                    <h1 class="text-3xl font-bold tracking-tight">Version-based runs only</h1>
+                    <p class="text-sm uppercase tracking-[0.2em] text-(--color-primary)">Zombie Mode</p>
+                    <h1 class="text-3xl font-bold tracking-tight">Shadow Infection Leaderboard</h1>
                 </div>
             </header>
 
-            <section class="grid gap-4 border border-(--color-base-300) bg-(--color-base-200)/90 p-4 md:grid-cols-2 lg:grid-cols-3">
+            <section class="grid gap-4 border border-(--color-base-300) bg-(--color-base-200)/90 p-4 md:grid-cols-2 lg:grid-cols-4">
                 <label class="flex flex-col gap-1 text-sm">
                     View
                     <select v-model="view" class="border border-(--color-base-300) bg-(--color-base-100) px-3 py-2">
@@ -27,6 +27,21 @@
                         <option v-for="entry in versions" :key="entry.version" :value="entry.version">
                             {{ entry.version }}
                         </option>
+                    </select>
+                </label>
+
+                <label class="flex flex-col gap-1 text-sm">
+                    Players in run
+                    <select
+                        v-model="playerCountFilter"
+                        class="border border-(--color-base-300) bg-(--color-base-100) px-3 py-2"
+                    >
+                        <option value="">Any</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
                     </select>
                 </label>
 
@@ -148,6 +163,7 @@ const allowedViews: LeaderboardView[] = ['top-runs', 'user-runs']
 const viewQuery = useRouteQuery<string>('view', 'top-runs')
 const versionQuery = useRouteQuery<string>('version', '')
 const usernameQuery = useRouteQuery<string>('username', '')
+const playerCountQuery = useRouteQuery<string>('playerCount', '1')
 
 function toQueryString(value: string | string[] | null | undefined): string {
     if (Array.isArray(value)) {
@@ -187,6 +203,16 @@ const username = computed<string>({
     },
     set(value) {
         usernameQuery.value = value
+    },
+})
+
+const playerCountFilter = computed<string>({
+    get() {
+        const value = toQueryString(playerCountQuery.value)
+        return ['1', '2', '3', '4', '5', ''].includes(value) ? value : '1'
+    },
+    set(value) {
+        playerCountQuery.value = value
     },
 })
 
@@ -268,6 +294,9 @@ async function loadVersions() {
 async function loadLeaderboard() {
     const trimmedVersion = version.value.trim()
     const trimmedUsername = username.value.trim()
+    const parsedPlayerCount = playerCountFilter.value
+        ? Number(playerCountFilter.value)
+        : undefined
 
     if (!trimmedVersion) {
         errorMessage.value = 'Please select a game version.'
@@ -290,12 +319,14 @@ async function loadLeaderboard() {
         const response = view.value === 'top-runs'
             ? await api.leaderboards.leaderboardsControllerGetTopRuns({
                     version: trimmedVersion,
+                ...(parsedPlayerCount ? { playerCount: parsedPlayerCount } : {}),
                     limit: 50,
                     offset: 0,
             })
             : await api.leaderboards.leaderboardsControllerGetUserRuns({
                     version: trimmedVersion,
                     username: trimmedUsername,
+                ...(parsedPlayerCount ? { playerCount: parsedPlayerCount } : {}),
                     limit: 50,
                     offset: 0,
             })
@@ -329,7 +360,7 @@ onBeforeUnmount(() => {
     }
 })
 
-watch([view, version, username], () => {
+watch([view, version, username, playerCountFilter], () => {
     if (!isReadyForAutoRefresh.value) {
         return
     }

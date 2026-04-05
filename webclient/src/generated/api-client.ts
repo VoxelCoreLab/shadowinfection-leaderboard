@@ -328,6 +328,12 @@ export class Api<
         offset?: number;
         /** @example "1.4.2" */
         version: string;
+        /**
+         * @min 1
+         * @max 5
+         * @example 5
+         */
+        playerCount?: number;
       },
       params: RequestParams = {},
     ) =>
@@ -363,6 +369,12 @@ export class Api<
         version: string;
         /** @example "PlayerOne" */
         username: string;
+        /**
+         * @min 1
+         * @max 5
+         * @example 5
+         */
+        playerCount?: number;
       },
       params: RequestParams = {},
     ) =>
@@ -384,6 +396,22 @@ export class Api<
     leaderboardsControllerGetVersions: (params: RequestParams = {}) =>
       this.request<void, any>({
         path: `/leaderboards/versions`,
+        method: "GET",
+        ...params,
+      }),
+  };
+  gameVersions = {
+    /**
+     * No description
+     *
+     * @tags Game Versions
+     * @name GameVersionsControllerGetGameVersions
+     * @summary List game versions with default latest version
+     * @request GET:/game-versions
+     */
+    gameVersionsControllerGetGameVersions: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/game-versions`,
         method: "GET",
         ...params,
       }),
