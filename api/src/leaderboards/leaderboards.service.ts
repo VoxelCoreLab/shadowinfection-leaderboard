@@ -1,22 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AllTimeLeaderboardQueryDto } from './dto/all-time-leaderboard-query.dto';
-import { SeasonPlayerCountLeaderboardQueryDto } from './dto/season-player-count-leaderboard-query.dto';
-import { SeasonLeaderboardQueryDto } from './dto/season-leaderboard-query.dto';
-import { UserHistoryQueryDto } from './dto/user-history-query.dto';
+import { TopRunsQueryDto } from './dto/top-runs-query.dto';
+import { UserRunsQueryDto } from './dto/user-runs-query.dto';
 
 @Injectable()
 export class LeaderboardsService {
   private readonly defaultLimit = 50;
+  private readonly zombieGameModeName = 'Zombie';
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSeasonLeaderboard(query: SeasonLeaderboardQueryDto) {
+  async getTopRuns(query: TopRunsQueryDto) {
     const { limit, offset } = this.resolvePagination(query.limit, query.offset);
 
     const where = {
-      gameModeId: query.gameModeId,
-      seasonId: query.seasonId,
+      gameMode: { name: this.zombieGameModeName },
+      season: { version: query.version },
     };
 
     const [total, rows] = await Promise.all([
@@ -24,13 +23,15 @@ export class LeaderboardsService {
       this.prisma.run.findMany({
         where,
         include: {
-          gameMode: true,
           season: true,
-          runPlayers: { include: { user: true } },
+          runPlayers: {
+            include: { user: true },
+            orderBy: [{ points: 'desc' }, { id: 'asc' }],
+          },
         },
         orderBy: [
           { wavesSurvived: 'desc' },
-          { duration: 'desc' },
+          { duration: 'asc' },
           { totalPoints: 'desc' },
           { createdAt: 'asc' },
           { id: 'asc' },
@@ -48,88 +49,21 @@ export class LeaderboardsService {
     };
   }
 
-  async getSeasonLeaderboardByPlayerCount(
-    query: SeasonPlayerCountLeaderboardQueryDto,
-  ) {
+  async getUserRuns(query: UserRunsQueryDto) {
     const { limit, offset } = this.resolvePagination(query.limit, query.offset);
 
-    const where = {
-      gameModeId: query.gameModeId,
-      seasonId: query.seasonId,
-      playerCount: query.playerCount,
-    };
-
-    const [total, rows] = await Promise.all([
-      this.prisma.run.count({ where }),
-      this.prisma.run.findMany({
-        where,
-        include: {
-          gameMode: true,
-          season: true,
-          runPlayers: { include: { user: true } },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        nickname: {
+          equals: query.username,
+          mode: 'insensitive',
         },
-        orderBy: [
-          { wavesSurvived: 'desc' },
-          { duration: 'desc' },
-          { totalPoints: 'desc' },
-          { createdAt: 'asc' },
-          { id: 'asc' },
-        ],
-        skip: offset,
-        take: limit,
-      }),
-    ]);
-
-    return {
-      total,
-      limit,
-      offset,
-      rows: this.mapRows(rows, offset),
-    };
-  }
-
-  async getAllTimeLeaderboard(query: AllTimeLeaderboardQueryDto) {
-    const { limit, offset } = this.resolvePagination(query.limit, query.offset);
-    const where = query.gameModeId ? { gameModeId: query.gameModeId } : {};
-
-    const [total, rows] = await Promise.all([
-      this.prisma.run.count({ where }),
-      this.prisma.run.findMany({
-        where,
-        include: {
-          gameMode: true,
-          season: true,
-          runPlayers: { include: { user: true } },
-        },
-        orderBy: [
-          { wavesSurvived: 'desc' },
-          { duration: 'desc' },
-          { totalPoints: 'desc' },
-          { createdAt: 'asc' },
-          { id: 'asc' },
-        ],
-        skip: offset,
-        take: limit,
-      }),
-    ]);
-
-    return {
-      total,
-      limit,
-      offset,
-      rows: this.mapRows(rows, offset),
-    };
-  }
-
-  async getUserHistory(query: UserHistoryQueryDto) {
-    const { limit, offset } = this.resolvePagination(query.limit, query.offset);
-    const user = await this.prisma.user.findUnique({
-      where: { nickname: query.nickname },
+      },
     });
 
     if (!user) {
       return {
-        nickname: query.nickname,
+        username: query.username,
         total: 0,
         limit,
         offset,
@@ -138,13 +72,13 @@ export class LeaderboardsService {
     }
 
     const where = {
+      gameMode: { name: this.zombieGameModeName },
+      season: { version: query.version },
       runPlayers: {
         some: {
           userId: user.id,
         },
       },
-      ...(query.gameModeId ? { gameModeId: query.gameModeId } : {}),
-      ...(query.seasonId ? { seasonId: query.seasonId } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -152,13 +86,15 @@ export class LeaderboardsService {
       this.prisma.run.findMany({
         where,
         include: {
-          gameMode: true,
           season: true,
-          runPlayers: { include: { user: true } },
+          runPlayers: {
+            include: { user: true },
+            orderBy: [{ points: 'desc' }, { id: 'asc' }],
+          },
         },
         orderBy: [
           { wavesSurvived: 'desc' },
-          { duration: 'desc' },
+          { duration: 'asc' },
           { totalPoints: 'desc' },
           { createdAt: 'asc' },
           { id: 'asc' },
@@ -169,24 +105,42 @@ export class LeaderboardsService {
     ]);
 
     return {
-      nickname: query.nickname,
+      username: user.nickname,
       total,
       limit,
       offset,
-      rows: this.mapRows(rows, offset),
+      rows: this.mapRows(rows, offset, user.id),
     };
   }
 
-  getSeasons() {
-    return this.prisma.season.findMany({
-      orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }],
+  async getVersions() {
+    const seasons = await this.prisma.season.findMany({
+      select: {
+        version: true,
+        isActive: true,
+        startDate: true,
+        endDate: true,
+      },
+      orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }, { id: 'desc' }],
     });
-  }
 
-  getGameModes() {
-    return this.prisma.gameMode.findMany({
-      orderBy: { name: 'asc' },
-    });
+    const versions = new Map<
+      string,
+      {
+        version: string;
+        isActive: boolean;
+        startDate: Date;
+        endDate: Date;
+      }
+    >();
+
+    for (const season of seasons) {
+      if (!versions.has(season.version)) {
+        versions.set(season.version, season);
+      }
+    }
+
+    return [...versions.values()];
   }
 
   private resolvePagination(limit?: number, offset?: number) {
@@ -199,38 +153,60 @@ export class LeaderboardsService {
   private mapRows(
     rows: Array<{
       id: number;
-      gameModeId: number;
-      seasonId: number;
       playerCount: number;
       wavesSurvived: number;
       duration: number;
       totalPoints: number;
       createdAt: Date;
-      gameMode: { id: number; name: string };
       season: { id: number; version: string };
-      runPlayers: Array<{ user: { nickname: string } | null }>;
+      runPlayers: Array<{
+        userId: number | null;
+        points: number;
+        zombieKills: number;
+        goldCollected: number;
+        deaths: number;
+        user: { nickname: string } | null;
+      }>;
     }>,
     offset: number,
+    matchedUserId?: number,
   ) {
-    return rows.map((row, index) => ({
-      rank: offset + index + 1,
-      runId: row.id,
-      gameMode: {
-        id: row.gameMode.id,
-        name: row.gameMode.name,
-      },
-      season: {
-        id: row.season.id,
+    return rows.map((row, index) => {
+      const matchedPlayer =
+        matchedUserId === undefined
+          ? undefined
+          : row.runPlayers.find((player) => player.userId === matchedUserId) ??
+            null;
+
+      return {
+        rank: offset + index + 1,
+        runId: row.id,
         version: row.season.version,
-      },
-      playerCount: row.playerCount,
-      wavesSurvived: row.wavesSurvived,
-      duration: row.duration,
-      totalPoints: row.totalPoints,
-      createdAt: row.createdAt,
-      players: row.runPlayers
-        .map((player) => player.user?.nickname)
-        .filter((nickname): nickname is string => Boolean(nickname)),
-    }));
+        playerCount: row.playerCount,
+        wavesSurvived: row.wavesSurvived,
+        duration: row.duration,
+        totalPoints: row.totalPoints,
+        createdAt: row.createdAt,
+        players: row.runPlayers.map((player) => ({
+          nickname: player.user?.nickname ?? null,
+          points: player.points,
+          zombieKills: player.zombieKills,
+          goldCollected: player.goldCollected,
+          deaths: player.deaths,
+        })),
+        matchedPlayer:
+          matchedPlayer === undefined
+            ? undefined
+            : matchedPlayer
+              ? {
+                  nickname: matchedPlayer.user?.nickname ?? null,
+                  points: matchedPlayer.points,
+                  zombieKills: matchedPlayer.zombieKills,
+                  goldCollected: matchedPlayer.goldCollected,
+                  deaths: matchedPlayer.deaths,
+                }
+              : null,
+      };
+    });
   }
 }

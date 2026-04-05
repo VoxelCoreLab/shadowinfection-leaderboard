@@ -1,25 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsInt,
+  IsNotEmpty,
+  IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { CreateRunPlayerDto } from './create-run-player.dto';
 
 export class CreateRunDto {
-  @ApiProperty({ example: 1, minimum: 1 })
-  @IsInt()
-  @Min(1)
-  gameModeId: number;
-
-  @ApiProperty({ example: 1, minimum: 1 })
-  @IsInt()
-  @Min(1)
-  seasonId: number;
+  @ApiProperty({ example: '1.4.2' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @IsNotEmpty()
+  version: string;
 
   @ApiProperty({ example: 4, minimum: 1, maximum: 4 })
   @IsInt()

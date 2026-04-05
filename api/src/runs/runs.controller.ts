@@ -8,10 +8,10 @@ import { CreateRunDto } from './dto/create-run.dto';
 export class RunsController {
   constructor(private readonly runsService: RunsService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Submit a run from game client' })
-  createRun(@Body() dto: CreateRunDto) {
-    return this.runsService.createRun(dto);
+  @Post('zombie')
+  @ApiOperation({ summary: 'Submit a zombie run from game client' })
+  createZombieRun(@Body() dto: CreateRunDto) {
+    return this.runsService.createZombieRun(dto);
   }
 
   @Get(':id')

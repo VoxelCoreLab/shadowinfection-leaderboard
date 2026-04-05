@@ -6,6 +6,7 @@ import configuration from './configuration';
 import { PrismaModule } from './prisma/prisma.module';
 import { RunsModule } from './runs/runs.module';
 import { LeaderboardsModule } from './leaderboards/leaderboards.module';
+import { GameVersionsModule } from './game-versions/game-versions.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LeaderboardsModule } from './leaderboards/leaderboards.module';
     PrismaModule,
     RunsModule,
     LeaderboardsModule,
+    GameVersionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,9 +8,11 @@ import { CreateRunDto } from './dto/create-run.dto';
 
 @Injectable()
 export class RunsService {
+  private readonly zombieGameModeName = 'Zombie';
+
   constructor(private readonly prisma: PrismaService) {}
 
-  async createRun(dto: CreateRunDto) {
+  async createZombieRun(dto: CreateRunDto) {
     if (dto.playerCount !== dto.players.length) {
       throw new BadRequestException(
         'playerCount must match the number of players in payload',
@@ -31,22 +33,29 @@ export class RunsService {
     }
 
     const [gameMode, season] = await Promise.all([
-      this.prisma.gameMode.findUnique({ where: { id: dto.gameModeId } }),
-      this.prisma.season.findUnique({ where: { id: dto.seasonId } }),
+      this.prisma.gameMode.findUnique({
+        where: { name: this.zombieGameModeName },
+      }),
+      this.prisma.season.findFirst({
+        where: { version: dto.version },
+        orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }, { id: 'desc' }],
+      }),
     ]);
 
     if (!gameMode) {
-      throw new NotFoundException('Game mode not found');
+      throw new NotFoundException('Zombie game mode not found');
     }
 
     if (!season) {
-      throw new NotFoundException('Season not found');
+      throw new NotFoundException(
+        `No season found for version ${dto.version}`,
+      );
     }
 
     const created = await this.prisma.run.create({
       data: {
-        gameModeId: dto.gameModeId,
-        seasonId: dto.seasonId,
+        gameModeId: gameMode.id,
+        seasonId: season.id,
         playerCount: dto.playerCount,
         wavesSurvived: dto.wavesSurvived,
         duration: dto.duration,
@@ -70,8 +79,8 @@ export class RunsService {
 
     return {
       id: created.id,
-      gameModeId: created.gameModeId,
-      seasonId: created.seasonId,
+      gameMode: gameMode.name,
+      version: season.version,
       playerCount: created.playerCount,
       wavesSurvived: created.wavesSurvived,
       duration: created.duration,
