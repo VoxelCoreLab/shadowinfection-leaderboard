@@ -106,7 +106,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouteQuery } from '@vueuse/router'
 import { api } from '../lib/api'
 
 type LeaderboardView = 'season' | 'season-player-count' | 'all-time' | 'user-history'
@@ -122,11 +123,100 @@ type LeaderboardRow = {
     totalPoints: number
 }
 
-const view = ref<LeaderboardView>('season')
-const playerCount = ref(4)
-const nickname = ref('')
-const selectedGameModeId = ref<number>(1)
-const selectedSeasonId = ref<number>(1)
+const allowedViews: LeaderboardView[] = [
+    'season',
+    'season-player-count',
+    'all-time',
+    'user-history',
+]
+
+const viewQuery = useRouteQuery<string>('view', 'season')
+const gameModeIdQuery = useRouteQuery<string>('gameModeId', '1')
+const seasonIdQuery = useRouteQuery<string>('seasonId', '1')
+const playerCountQuery = useRouteQuery<string>('playerCount', '1')
+const nicknameQuery = useRouteQuery<string>('nickname', '')
+
+function toQueryString(value: string | string[] | null | undefined): string {
+    if (Array.isArray(value)) {
+        return value[0] ?? ''
+    }
+
+    return value ?? ''
+}
+
+function parseIntInRange(
+    value: string | string[] | null | undefined,
+    fallback: number,
+    min: number,
+    max?: number,
+): number {
+    const parsed = Number(toQueryString(value))
+
+    if (!Number.isInteger(parsed)) {
+        return fallback
+    }
+
+    if (parsed < min) {
+        return fallback
+    }
+
+    if (typeof max === 'number' && parsed > max) {
+        return fallback
+    }
+
+    return parsed
+}
+
+const view = computed<LeaderboardView>({
+    get() {
+        const candidate = toQueryString(viewQuery.value)
+
+        if (allowedViews.includes(candidate as LeaderboardView)) {
+            return candidate as LeaderboardView
+        }
+
+        return 'season'
+    },
+    set(value) {
+        viewQuery.value = value
+    },
+})
+
+const selectedGameModeId = computed<number>({
+    get() {
+        return parseIntInRange(gameModeIdQuery.value, 1, 1)
+    },
+    set(value) {
+        gameModeIdQuery.value = String(value)
+    },
+})
+
+const selectedSeasonId = computed<number>({
+    get() {
+        return parseIntInRange(seasonIdQuery.value, 1, 1)
+    },
+    set(value) {
+        seasonIdQuery.value = String(value)
+    },
+})
+
+const playerCount = computed<number>({
+    get() {
+        return parseIntInRange(playerCountQuery.value, 1, 1, 4)
+    },
+    set(value) {
+        playerCountQuery.value = String(value)
+    },
+})
+
+const nickname = computed<string>({
+    get() {
+        return toQueryString(nicknameQuery.value)
+    },
+    set(value) {
+        nicknameQuery.value = value
+    },
+})
 
 const gameModes = ref<Array<{ id: number; name: string }>>([])
 const seasons = ref<Array<{ id: number; version: string; isActive: boolean }>>([])
