@@ -8,7 +8,7 @@
                 </div>
             </header>
 
-            <section class="grid gap-4 border border-(--color-base-300) bg-(--color-base-200)/90 p-4 md:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_1fr_auto]">
+            <section class="grid gap-4 border border-(--color-base-300) bg-(--color-base-200)/90 p-4 md:grid-cols-2 lg:grid-cols-3">
                 <label class="flex flex-col gap-1 text-sm">
                     View
                     <select v-model="view" class="border border-(--color-base-300) bg-(--color-base-100) px-3 py-2">
@@ -40,13 +40,6 @@
                     />
                 </label>
 
-                <button
-                    type="button"
-                    class="cursor-pointer self-end border border-(--color-accent) bg-(--color-primary) px-4 py-2 text-sm font-semibold text-(--color-primary-content) hover:bg-(--color-accent) hover:text-(--color-accent-content)"
-                    @click="loadLeaderboard"
-                >
-                    Refresh
-                </button>
             </section>
 
             <section class="border border-(--color-base-300) bg-(--color-base-200)/90 p-4">
