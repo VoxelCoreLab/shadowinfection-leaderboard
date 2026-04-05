@@ -10,6 +10,74 @@
  * ---------------------------------------------------------------
  */
 
+export interface CreateRunPlayerDto {
+  /**
+   * @maxLength 32
+   * @example "PlayerOne"
+   */
+  nickname: string;
+  /**
+   * @min 0
+   * @example 12000
+   */
+  points: number;
+  /**
+   * @min 0
+   * @example 340
+   */
+  zombieKills: number;
+  /**
+   * @min 0
+   * @example 1800
+   */
+  goldCollected: number;
+  /**
+   * @min 0
+   * @example 2
+   */
+  deaths: number;
+}
+
+export interface CreateRunDto {
+  /**
+   * @min 1
+   * @example 1
+   */
+  gameModeId: number;
+  /**
+   * @min 1
+   * @example 1
+   */
+  seasonId: number;
+  /**
+   * @min 1
+   * @max 4
+   * @example 4
+   */
+  playerCount: number;
+  /**
+   * @min 0
+   * @example 23
+   */
+  wavesSurvived: number;
+  /**
+   * Duration in seconds
+   * @min 0
+   * @example 1520
+   */
+  duration: number;
+  /**
+   * @min 0
+   * @example 48000
+   */
+  totalPoints: number;
+  /**
+   * @maxItems 4
+   * @minItems 1
+   */
+  players: CreateRunPlayerDto[];
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -207,4 +275,236 @@ export class Api<
       format: "json",
       ...params,
     });
+
+  runs = {
+    /**
+     * No description
+     *
+     * @tags Runs
+     * @name RunsControllerCreateRun
+     * @summary Submit a run from game client
+     * @request POST:/runs
+     */
+    runsControllerCreateRun: (data: CreateRunDto, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/runs`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Runs
+     * @name RunsControllerGetRunById
+     * @summary Get run detail with full per-player stats
+     * @request GET:/runs/{id}
+     */
+    runsControllerGetRunById: (id: number, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/runs/${id}`,
+        method: "GET",
+        ...params,
+      }),
+  };
+  leaderboards = {
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetSeasonLeaderboard
+     * @summary Season leaderboard by mode and season
+     * @request GET:/leaderboards/season
+     */
+    leaderboardsControllerGetSeasonLeaderboard: (
+      query: {
+        /**
+         * @min 1
+         * @max 200
+         * @default 50
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        gameModeId: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        seasonId: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/leaderboards/season`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetSeasonLeaderboardByPlayerCount
+     * @summary Season leaderboard filtered by player count
+     * @request GET:/leaderboards/season/player-count
+     */
+    leaderboardsControllerGetSeasonLeaderboardByPlayerCount: (
+      query: {
+        /**
+         * @min 1
+         * @max 200
+         * @default 50
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        gameModeId: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        seasonId: number;
+        /**
+         * @min 1
+         * @max 4
+         * @example 4
+         */
+        playerCount: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/leaderboards/season/player-count`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetAllTimeLeaderboard
+     * @summary All-time leaderboard across seasons
+     * @request GET:/leaderboards/all-time
+     */
+    leaderboardsControllerGetAllTimeLeaderboard: (
+      query?: {
+        /**
+         * @min 1
+         * @max 200
+         * @default 50
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        gameModeId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/leaderboards/all-time`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetUserHistory
+     * @summary Run history leaderboard rows for one user
+     * @request GET:/leaderboards/user-history
+     */
+    leaderboardsControllerGetUserHistory: (
+      query: {
+        /**
+         * @min 1
+         * @max 200
+         * @default 50
+         */
+        limit?: number;
+        /**
+         * @min 0
+         * @default 0
+         */
+        offset?: number;
+        /** @example "PlayerOne" */
+        nickname: string;
+        /**
+         * @min 1
+         * @example 1
+         */
+        gameModeId?: number;
+        /**
+         * @min 1
+         * @example 1
+         */
+        seasonId?: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/leaderboards/user-history`,
+        method: "GET",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetSeasons
+     * @summary List all seasons for filters
+     * @request GET:/leaderboards/seasons
+     */
+    leaderboardsControllerGetSeasons: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/leaderboards/seasons`,
+        method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Leaderboards
+     * @name LeaderboardsControllerGetGameModes
+     * @summary List all game modes for filters
+     * @request GET:/leaderboards/game-modes
+     */
+    leaderboardsControllerGetGameModes: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/leaderboards/game-modes`,
+        method: "GET",
+        ...params,
+      }),
+  };
 }

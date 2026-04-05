@@ -1,12 +1,13 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
-import PageHome from '../pages/PageHome.vue'
+import PageLeaderboard from '../pages/PageLeaderboard.vue'
 
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
-        { path: '/', component: PageHome},
+        { path: '/', component: PageLeaderboard },
+        { path: '/leaderboard', component: PageLeaderboard },
     ],
     scrollBehavior(_to, _from, savedPosition) {
         if (savedPosition) {
