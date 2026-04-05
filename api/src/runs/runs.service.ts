@@ -19,15 +19,6 @@ export class RunsService {
       );
     }
 
-    const normalizedNicknames = dto.players.map((player) =>
-      player.nickname.trim().toLowerCase(),
-    );
-    if (new Set(normalizedNicknames).size !== normalizedNicknames.length) {
-      throw new BadRequestException(
-        'Each player nickname must be unique within a run',
-      );
-    }
-
     const gameMode = await this.prisma.gameMode.upsert({
       where: { name: this.zombieGameModeName },
       update: {},

@@ -93,8 +93,6 @@ model RunPlayer {
   run  Run   @relation(fields: [runId], references: [id], onDelete: Cascade)
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  // One user per run (no duplicate players in single run)
-  @@unique([runId, userId])
   @@map("run_players")
 }
 
