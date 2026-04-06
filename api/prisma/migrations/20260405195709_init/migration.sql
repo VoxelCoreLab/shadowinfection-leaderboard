@@ -89,6 +89,9 @@ CREATE INDEX "runs_gameModeId_seasonId_playerCount_idx" ON "runs"("gameModeId", 
 CREATE INDEX "runs_seasonId_gameModeId_wavesSurvived_duration_createdAt_idx" ON "runs"("seasonId", "gameModeId", "wavesSurvived" DESC, "duration" ASC, "createdAt" ASC);
 
 -- CreateIndex
+CREATE UNIQUE INDEX "run_players_runId_userId_key" ON "run_players"("runId", "userId");
+
+-- CreateIndex
 CREATE INDEX "player_season_stats_seasonId_gameModeId_totalPoints_idx" ON "player_season_stats"("seasonId", "gameModeId", "totalPoints" DESC);
 
 -- CreateIndex
